@@ -1,0 +1,6 @@
+framework module Pods_FCustomCalendarTests {
+  umbrella header "Pods-FCustomCalendarTests-umbrella.h"
+
+  export *
+  module * { export * }
+}
