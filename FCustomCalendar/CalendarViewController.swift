@@ -9,6 +9,7 @@ import UIKit
 
 protocol CalendarViewControllerDelegate: class {
     func selectedDate(date: String, selected: Date)
+    func selectedMonthFirstDate(date: String, firstDate: Date)
 }
 
 class CalendarViewController: UIViewController {
@@ -21,13 +22,14 @@ class CalendarViewController: UIViewController {
     var selectedMonthColor = UIColor(hex: 0x3a294b)
     var selectedDateViewColor = UIColor(hex: 0x4e3f5d)
     var selectedDateTextColor = UIColor.darkGray
-    var selected = Date()
+    var selectedDate = Date()
+    var selectedMonthFirstDate = Date()
     
     @IBOutlet weak var calendarView: JTACMonthView!
     @IBOutlet weak var monthLabel: UILabel!
     @IBOutlet weak var yearView: UIView!
     
-    @IBOutlet weak var selectedDate: UILabel!
+    @IBOutlet weak var selectedDateLabel: UILabel!
     @IBOutlet weak var dateView: UIView!
     
     @IBOutlet weak var stackView: UIStackView!
@@ -77,6 +79,9 @@ class CalendarViewController: UIViewController {
             numberOfCalendarRows = 6
         }
         calendarView.reloadData()
+        // If Selected date belongs to same month when switching types
+        // scroll to that selected date
+        calendarView.scrollToDate(selectedMonthFirstDate, animateScroll: false)
     }
 //    func setupButtons() {
 //        doneButton.translatesAutoresizingMaskIntoConstraints = false
@@ -95,7 +100,7 @@ class CalendarViewController: UIViewController {
         monthLabel.translatesAutoresizingMaskIntoConstraints = false
         yearView.translatesAutoresizingMaskIntoConstraints = false
         dateView.translatesAutoresizingMaskIntoConstraints = false
-        selectedDate.translatesAutoresizingMaskIntoConstraints = false
+        selectedDateLabel.translatesAutoresizingMaskIntoConstraints = false
         dateView.translatesAutoresizingMaskIntoConstraints = false
         stackView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
@@ -110,8 +115,8 @@ class CalendarViewController: UIViewController {
             dateView.topAnchor.constraint(equalTo: self.yearView.bottomAnchor, constant: 8),
             dateView.widthAnchor.constraint(equalTo: topStackView.widthAnchor, multiplier: 0),
             
-            selectedDate.centerYAnchor.constraint(equalTo: self.dateView.centerYAnchor),
-            selectedDate.centerXAnchor.constraint(equalTo: self.dateView.centerXAnchor),
+            selectedDateLabel.centerYAnchor.constraint(equalTo: self.dateView.centerYAnchor),
+            selectedDateLabel.centerXAnchor.constraint(equalTo: self.dateView.centerXAnchor),
             
             stackView.topAnchor.constraint(equalTo: self.dateView.bottomAnchor, constant: 16),
             stackView.widthAnchor.constraint(equalTo: topStackView.widthAnchor, multiplier: 0)
@@ -125,8 +130,8 @@ class CalendarViewController: UIViewController {
         calendarView.minimumInteritemSpacing = 0
         
         // Setup labels
-        calendarView.scrollToDate(selected, animateScroll: false)
-        calendarView.selectDates([selected])
+        calendarView.scrollToDate(selectedDate, animateScroll: false)
+        calendarView.selectDates([selectedDate])
         calendarView.visibleDates { (visibleDates) in
             self.setupViewsOfCalendar(from: visibleDates)
         }
@@ -134,6 +139,7 @@ class CalendarViewController: UIViewController {
     
     func setupViewsOfCalendar(from visibleDates: DateSegmentInfo) {
         let date = visibleDates.monthDates.first!.date
+        self.selectedMonthFirstDate = date
         
         formatter.dateFormat = "yyyy"
         let year = formatter.string(from: date)
@@ -141,13 +147,15 @@ class CalendarViewController: UIViewController {
         formatter.dateFormat = "MMMM"
         let month = formatter.string(from: date)
         monthLabel.text = "\(month), \(year)"
+        
+        self.delegate?.selectedMonthFirstDate(date: monthLabel.text ?? "", firstDate: date)
     }
     
     func setDate(date: Date) {
         let formatters = DateFormatter()
         formatters.dateFormat = "dd MMM yyyy"
-        self.selected = date
-        selectedDate.text = formatters.string(from: date)
+        self.selectedDate = date
+        selectedDateLabel.text = formatters.string(from: date)
     }
     
     func handleCellTextColor(view: JTACDayCell?, cellState: CellState) {
@@ -234,7 +242,7 @@ class CalendarViewController: UIViewController {
        
        @IBAction func doneClicked(_ sender: Any) {
            
-           self.delegate?.selectedDate(date: selectedDate.text!, selected: self.selected)
+           self.delegate?.selectedDate(date: selectedDateLabel.text!, selected: self.selectedDate)
            self.dismiss(animated: true, completion: nil)
            
        }

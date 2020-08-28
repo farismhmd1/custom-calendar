@@ -68,7 +68,11 @@ class ViewController: UIViewController {
 // MARK: - Calendar Delegates
 extension ViewController: CalendarViewControllerDelegate {
     func selectedDate(date: String, selected: Date) {
-        print("selectedDate \(date) \(selected)")
+        print("selected Date \(date) \(selected)")
+    }
+    
+    func selectedMonthFirstDate(date: String, firstDate: Date) {
+        print("selected Month \(date) \(firstDate)")
     }
 }
 
