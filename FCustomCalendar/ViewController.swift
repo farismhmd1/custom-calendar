@@ -34,7 +34,7 @@ class ViewController: UIViewController {
             vc.selectedDateViewColor = .red
             vc.selectedRangeColor = UIColor.red.withAlphaComponent(0.5)
             vc.selectedDateTextColor = .white
-            vc.calendarSelectionMode = .single
+            vc.calendarSelectionMode = .multiple
             calendarViewController = vc
         }
     }
