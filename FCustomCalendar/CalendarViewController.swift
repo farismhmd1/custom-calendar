@@ -13,17 +13,7 @@ protocol CalendarViewControllerDelegate: class {
 }
 
 class CalendarViewController: UIViewController {
-
-    var preDateSelectable: Bool = true
-    weak var delegate: CalendarViewControllerDelegate?
     
-    var outsideMonthColor = UIColor(hex: 0x584a66)
-    var monthColor = UIColor.white
-    var selectedMonthColor = UIColor(hex: 0x3a294b)
-    var selectedDateViewColor = UIColor(hex: 0x4e3f5d)
-    var selectedDateTextColor = UIColor.darkGray
-    var selectedDate = Date()
-    var selectedMonthFirstDate = Date()
     
     @IBOutlet weak var calendarView: JTACMonthView!
     @IBOutlet weak var monthLabel: UILabel!
@@ -36,11 +26,38 @@ class CalendarViewController: UIViewController {
     @IBOutlet weak var topStackView: UIStackView!
     
     
+    var preDateSelectable: Bool = true
+    weak var delegate: CalendarViewControllerDelegate?
+    
+    var prevDayColor = UIColor(hex: 0x584a66)
+    var outsideMonthColor = UIColor(hex: 0x584a66)
+    var monthColor = UIColor.white
+    var selectedMonthColor = UIColor(hex: 0x3a294b)
+    var selectedDateViewColor = UIColor(hex: 0x4e3f5d)
+    var selectedDateTextColor = UIColor.darkGray
+    var selectedRangeColor = UIColor.red.withAlphaComponent(0.5)
+    var selectedMonthFirstDate = Date()
+    
+    /// Calendar start date
+    var calendarStartDate = "2020 01 01"
+    /// Calendar end date
+    var calendarEndDate = "2020 12 31"
+    
     let formatter = DateFormatter()
     enum calendarType {
         case weekly,monthly
     }
+    enum selectionMode {
+        case single, multiple
+    }
+    var calendarSelectionMode = selectionMode.multiple
+    
     var numberOfCalendarRows = 1 // or 6
+    
+    // date range selection
+    var firstDate: Date?
+    var lastDate: Date?
+    var rangeSelectedDates: [Date] = []
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -49,7 +66,7 @@ class CalendarViewController: UIViewController {
         setupCalendarView()
         setupTopStackView()
         setupLabels()
-//        setupButtons()
+        //        setupButtons()
     }
     
     override func didReceiveMemoryWarning() {
@@ -83,18 +100,18 @@ class CalendarViewController: UIViewController {
         // scroll to that selected date
         calendarView.scrollToDate(selectedMonthFirstDate, animateScroll: false)
     }
-//    func setupButtons() {
-//        doneButton.translatesAutoresizingMaskIntoConstraints = false
-//        cancelButton.translatesAutoresizingMaskIntoConstraints = false
-//        NSLayoutConstraint.activate([
-//            
-//            doneButton.bottomAnchor.constraint(equalTo: self.topStackView.bottomAnchor, constant: -8),
-//            doneButton.trailingAnchor.constraint(equalTo: self.topStackView.trailingAnchor, constant: -24),
-//            
-//            cancelButton.bottomAnchor.constraint(equalTo: self.topStackView.bottomAnchor, constant: -8),
-//            cancelButton.trailingAnchor.constraint(equalTo: self.doneButton.leadingAnchor, constant: -24)
-//        ])
-//    }
+    //    func setupButtons() {
+    //        doneButton.translatesAutoresizingMaskIntoConstraints = false
+    //        cancelButton.translatesAutoresizingMaskIntoConstraints = false
+    //        NSLayoutConstraint.activate([
+    //
+    //            doneButton.bottomAnchor.constraint(equalTo: self.topStackView.bottomAnchor, constant: -8),
+    //            doneButton.trailingAnchor.constraint(equalTo: self.topStackView.trailingAnchor, constant: -24),
+    //
+    //            cancelButton.bottomAnchor.constraint(equalTo: self.topStackView.bottomAnchor, constant: -8),
+    //            cancelButton.trailingAnchor.constraint(equalTo: self.doneButton.leadingAnchor, constant: -24)
+    //        ])
+    //    }
     
     func setupLabels() {
         monthLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -108,7 +125,7 @@ class CalendarViewController: UIViewController {
             yearView.topAnchor.constraint(equalTo: self.topStackView.topAnchor),
             yearView.heightAnchor.constraint(equalToConstant: 50),
             yearView.widthAnchor.constraint(equalTo: topStackView.widthAnchor, multiplier: 0),
-  
+            
             monthLabel.centerYAnchor.constraint(equalTo: self.yearView.centerYAnchor),
             monthLabel.centerXAnchor.constraint(equalTo: self.yearView.centerXAnchor),
             
@@ -123,6 +140,7 @@ class CalendarViewController: UIViewController {
         ])
     }
     
+    
     func setupCalendarView() {
         
         // Setup calendar spacing
@@ -130,12 +148,27 @@ class CalendarViewController: UIViewController {
         calendarView.minimumInteritemSpacing = 0
         
         // Setup labels
-        calendarView.scrollToDate(selectedDate, animateScroll: false)
-        calendarView.selectDates([selectedDate])
+        if firstDate != nil {
+            calendarView.scrollToDate(firstDate!, animateScroll: false)
+            calendarView.selectDates([firstDate!])
+        }
+        
         calendarView.visibleDates { (visibleDates) in
             self.setupViewsOfCalendar(from: visibleDates)
         }
+        
+        
+        if calendarSelectionMode == .multiple {
+            calendarView.allowsMultipleSelection = true
+            calendarView.rangeSelectionMode = .continuous
+            calendarView.allowsRangedSelection = true
+            
+//            let panGensture = UILongPressGestureRecognizer(target: self, action: #selector(didStartRangeSelecting(gesture:)))
+//            panGensture.minimumPressDuration = 0.5
+//            calendarView.addGestureRecognizer(panGensture)
+        }
     }
+    
     
     func setupViewsOfCalendar(from visibleDates: DateSegmentInfo) {
         let date = visibleDates.monthDates.first!.date
@@ -151,166 +184,268 @@ class CalendarViewController: UIViewController {
         self.delegate?.selectedMonthFirstDate(date: monthLabel.text ?? "", firstDate: date)
     }
     
-    func setDate(date: Date) {
+    func setDateInfoDetailsUI() {
         let formatters = DateFormatter()
         formatters.dateFormat = "dd MMM yyyy"
-        self.selectedDate = date
-        selectedDateLabel.text = formatters.string(from: date)
+        
+        if firstDate != nil && lastDate != nil && firstDate != lastDate {
+            selectedDateLabel.text = "\(formatters.string(from: firstDate!)) to \(formatters.string(from: lastDate!))"
+        } else if firstDate != nil && lastDate != nil {
+            selectedDateLabel.text = "\(formatters.string(from: firstDate!))"
+        } else {
+            selectedDateLabel.text = ""
+        }
+        
+        
+        
     }
     
+    func setUpRangeSelection(){
+        self.calendarView.allowsMultipleSelection = true
+        self.calendarView.allowsRangedSelection = true
+    //        let panGensture = UILongPressGestureRecognizer(target: self, action: #selector(didStartRangeSelecting(gesture:)))
+    //        panGensture.minimumPressDuration = 0.2
+    //        self.calendarView.addGestureRecognizer(panGensture)
+        }
     func handleCellTextColor(view: JTACDayCell?, cellState: CellState) {
-        guard let validCell = view as? CustomDayCell else { return }
-        if cellState.isSelected {
-            validCell.dateLabel.textColor = selectedDateTextColor
-            validCell.selectedView.backgroundColor = selectedDateViewColor
-        } else {
-   
-            if cellState.dateBelongsTo == .thisMonth {
-                validCell.dateLabel.textColor = monthColor
-                
-            } else {
-                validCell.dateLabel.textColor = outsideMonthColor
+            guard let validCell = view as? CustomDayCell else { return }
+        
+            validCell.isHidden = false
+            let todaysDate = Date()
+            formatter.dateFormat = "yyyy MM dd"
+            let todayDateString = formatter.string(from: todaysDate)
+            let monthsDateString = formatter.string(from: cellState.date)
+            if todayDateString == monthsDateString && cellState.dateBelongsTo == .thisMonth {
+                // current selected day label color
+                validCell.dateLabel.textColor = selectedDateTextColor
+            } else if cellState.date < todaysDate && cellState.dateBelongsTo == .thisMonth{
+                validCell.dateLabel.textColor = prevDayColor
+            }else {
+                if cellState.isSelected {
+                    if cellState.dateBelongsTo == .thisMonth {
+                        validCell.dateLabel.textColor = self.selectedMonthColor
+                    }
+                } else {
+                    if cellState.dateBelongsTo == .thisMonth {
+                        validCell.dateLabel.textColor = self.monthColor
+                    }
+                }
+            }
+            if cellState.dateBelongsTo != .thisMonth {
+                validCell.isHidden = true
             }
         }
-    }
-  
-    func handleCellSelected(view: JTACDayCell?, cellState: CellState, date: Date) {
-        guard let validCell = view as? CustomDayCell else { return }
-        
-        if cellState.dateBelongsTo != .thisMonth {
-//            dayNotBelongingThisMonthStyle(cell: validCell, cellState: cellState)
-            dayBelongToCurrentMonthStyle(view: view, cell: validCell, cellState: cellState)
-        } else if date.isSmaller(to: Date()) && !preDateSelectable {
-            dayBeforeCurrentDateStyle(cell: validCell, cellState: cellState)
-        } else {
-            dayBelongToCurrentMonthStyle(view: view, cell: validCell, cellState: cellState)
-        }
-        
-    }
-    
-    /// Style for day not belonging to current month
-    func dayNotBelongingThisMonthStyle(cell: CustomDayCell, cellState: CellState) {
-        //validCell.dateLabel.text = ""
-        // For showing pre and post month days
-        //            validCell.isUserInteractionEnabled = false
-        //            validCell.selectedView.isHidden = true
-        
-        cell.dateLabel.text = cellState.text
-        cell.isUserInteractionEnabled = false
-        cell.selectedView.isHidden = true
-    }
-    
-    /// Style for day before  current day
-    func dayBeforeCurrentDateStyle(cell: CustomDayCell, cellState: CellState) {
-        //            validCell.dateLabel.text = "-"
-        //            validCell.isUserInteractionEnabled = false
-        //            validCell.selectedView.isHidden = true
-        
-        cell.dateLabel.text = cellState.text
-        cell.isUserInteractionEnabled = false
-        cell.selectedView.isHidden = true
-    }
-    
-    /// Style for day belong to current month style
-    func dayBelongToCurrentMonthStyle(view: JTACDayCell?, cell: CustomDayCell, cellState: CellState) {
-        cell.isUserInteractionEnabled = true
-        if cellState.isSelected {
-            view?.transform = CGAffineTransform(scaleX: 0.5, y: 0.5)
-            UIView.animate(
-                withDuration: 0.5,
-                delay: 0, usingSpringWithDamping: 0.3,
-                initialSpringVelocity: 0.1,
-                options: UIView.AnimationOptions.beginFromCurrentState,
-                animations: {
-                    view?.transform = CGAffineTransform(scaleX: 1, y: 1)
-            },
-                completion: { _ in
-            })
+    func handleCellSelected(view: JTACDayCell?, cellState: CellState) {
+            guard let validCell = view as? CustomDayCell else { return }
             
-            cell.selectedView.isHidden = false
-        } else {
-            cell.selectedView.isHidden = true
+            if cellState.isSelected && cellState.dateBelongsTo == .thisMonth {
+    //            if cellState.dateBelongsTo != .thisMonth {
+    //                validCell.selectedView.isHidden = true
+    //                validCell.leftView.isHidden = true
+    //                validCell.rightView.isHidden = true
+    //                validCell.backgroundColor = UIColor.clear
+    //            } else {
+    //                validCell.selectedView.isHidden = false
+    //            }
+                validCell.selectedView.isHidden = false
+            } else {
+                validCell.selectedView.isHidden = true
+                validCell.leftView.isHidden = true
+                validCell.rightView.isHidden = true
+                validCell.backgroundColor = UIColor.clear
+                validCell.dateLabel.isHidden = false
+
+            }
         }
-        cell.dateLabel.text = cellState.text
-    }
-    
+    func handleDateRangeSelection(view: JTACDayCell?, cellState: CellState) {
+            guard let cell = view as? CustomDayCell else { return }
+            cell.leftView.backgroundColor = selectedRangeColor
+            cell.rightView.backgroundColor = selectedRangeColor
+            if calendarView.allowsMultipleSelection {
+                if cellState.isSelected {
+//                    if cellState.dateBelongsTo == .thisMonth {
+//                        cell.selectedView.isHidden = false
+//                    } else {
+//                        cell.selectedView.isHidden = true
+//                    }
+//                    cell.selectedView.isHidden = false
+                    switch cellState.selectedPosition() {
+                        
+                    case .full:
+                        cell.dateLabel.isHidden = false
+                        cell.backgroundColor = UIColor.clear
+                        cell.selectedView.backgroundColor = self.selectedDateViewColor
+                        cell.leftView.isHidden = true
+                        cell.rightView.isHidden = true
+                    case .right:
+                        //cell.selectedView.isHidden = false
+//                        if cellState.dateBelongsTo != .thisMonth {
+//                            cell.leftView.isHidden = true
+//                        } else {
+//                            cell.leftView.isHidden = false
+//                        }
+                        cell.leftView.isHidden = false
+                        cell.rightView.isHidden = true
+                        cell.backgroundColor = UIColor.clear
+                        cell.selectedView.backgroundColor = self.selectedDateViewColor
+                    case .left:
+                        //cell.selectedView.isHidden = false
+//                        if cellState.dateBelongsTo != .thisMonth {
+//                            cell.rightView.isHidden = true
+//                        } else {
+//                            cell.rightView.isHidden = false
+//                        }
+                        cell.leftView.isHidden = true
+                        cell.rightView.isHidden = false
+                        cell.backgroundColor = UIColor.clear
+                        cell.selectedView.backgroundColor = self.selectedDateViewColor
+                    case .middle:
+//                        if cellState.dateBelongsTo != .thisMonth {
+//                            cell.dateLabel.isHidden = true
+//                        } else {
+//                            cell.dateLabel.isHidden = false
+//                        }
+                        cell.dateLabel.isHidden = false
+                        cell.backgroundColor = .clear
+                        cell.leftView.isHidden = false
+                        cell.rightView.isHidden = false
+                        cell.selectedView.backgroundColor = self.selectedRangeColor // Or what ever you want for your dates that land in the middle
+                    default:
+                        cell.backgroundColor = UIColor.clear
+                        cell.dateLabel.isHidden = false
+                        cell.leftView.isHidden = true
+                        cell.rightView.isHidden = true
+                        cell.selectedView.isHidden = true
+                        cell.selectedView.backgroundColor = nil // Have no selection when a cell is not selected
+                    }
+                }
+                
+            }
+        }
     
     // MARK: - Actions
-       @IBAction func cancelClicked(_ sender: Any) {
-           self.dismiss(animated: true, completion: nil)
-       }
-       
-       @IBAction func doneClicked(_ sender: Any) {
-           
-           self.delegate?.selectedDate(date: selectedDateLabel.text!, selected: self.selectedDate)
-           self.dismiss(animated: true, completion: nil)
-           
-       }
+    @IBAction func cancelClicked(_ sender: Any) {
+        self.dismiss(animated: true, completion: nil)
+    }
+    
+    @IBAction func doneClicked(_ sender: Any) {
+        
+//        self.delegate?.selectedDate(date: selectedDateLabel.text!, selected: self.selectedDate!)
+        self.dismiss(animated: true, completion: nil)
+        
+    }
 }
 
 extension CalendarViewController: JTACMonthViewDelegate, JTACMonthViewDataSource {
     
     
     func configureCalendar(_ calendar: JTACMonthView) -> ConfigurationParameters {
-            formatter.dateFormat = "yyyy MM dd"
-            formatter.timeZone = Calendar.current.timeZone
-            formatter.locale = Calendar.current.locale
-            
-            let startDate = Date()
-            let endDate = formatter.date(from: "2050 12 31")
-            
-    //        let parameters = ConfigurationParameters(startDate: startDate, endDate: endDate!)
-            
-            let parameters = ConfigurationParameters(startDate: startDate,
-            endDate: endDate!,
-            numberOfRows: numberOfCalendarRows,
-            generateInDates: .forAllMonths,
-            generateOutDates: .tillEndOfRow,
-            firstDayOfWeek: .sunday)
-            return parameters
-        }
+        formatter.dateFormat = "yyyy MM dd"
+        formatter.timeZone = Calendar.current.timeZone
+        formatter.locale = Calendar.current.locale
         
+        let startDate = formatter.date(from: calendarStartDate)//Date()
+        let endDate = formatter.date(from: calendarEndDate)
         
-        func calendar(_ calendar: JTACMonthView, willDisplay cell: JTACDayCell, forItemAt date: Date, cellState: CellState, indexPath: IndexPath) {
-            handleCellSelected(view: cell, cellState: cellState, date: date)
-            handleCellTextColor(view: cell, cellState: cellState)
-        }
+        //        let parameters = ConfigurationParameters(startDate: startDate, endDate: endDate!)
+        
+        let parameters = ConfigurationParameters(startDate: startDate!,
+                                                 endDate: endDate!,
+                                                 numberOfRows: numberOfCalendarRows,
+                                                 generateInDates: .forAllMonths,
+                                                 generateOutDates: .tillEndOfRow,
+                                                 firstDayOfWeek: .sunday)
+        return parameters
+    }
+    
+    
+    func calendar(_ calendar: JTACMonthView, willDisplay cell: JTACDayCell, forItemAt date: Date, cellState: CellState, indexPath: IndexPath) {
+        handleCellSelected(view: cell, cellState: cellState)
+        handleCellTextColor(view: cell, cellState: cellState)
+        handleDateRangeSelection(view: cell, cellState: cellState)
+        cell.layoutIfNeeded()
+    }
     // Display Cell
     func calendar(_ calendar: JTACMonthView, cellForItemAt date: Date, cellState: CellState, indexPath: IndexPath) -> JTACDayCell {
         let cell = calendar.dequeueReusableJTAppleCell(withReuseIdentifier: "CustomDayCell", for: indexPath) as! CustomDayCell
         cell.dateLabel.text = cellState.text
-        
-        handleCellSelected(view: cell, cellState: cellState, date: date)
+        handleCellSelected(view: cell, cellState: cellState)
         handleCellTextColor(view: cell, cellState: cellState)
+        handleDateRangeSelection(view: cell, cellState: cellState)
+        
+        //        if cellState.dateBelongsTo != .thisMonth {
+        //            cell.isHidden = true
+        //        } else {
+        //            cell.isHidden = false
+        //        }
+        cell.layoutIfNeeded()
         return cell
     }
     
     
     func calendar(_ calendar: JTACMonthView, didSelectDate date: Date, cell: JTACDayCell?, cellState: CellState, indexPath: IndexPath) {
-         handleCellSelected(view: cell, cellState: cellState, date: date)
-               handleCellTextColor(view: cell, cellState: cellState)
-               setDate(date: date)
+        handleCellSelected(view: cell, cellState: cellState)
+        handleCellTextColor(view: cell, cellState: cellState)
+        handleDateRangeSelection(view: cell, cellState: cellState)
+
+        if firstDate != nil {
+            if date < self.firstDate! {
+                self.firstDate = date
+            } else {
+                self.lastDate = date
+            }
+            calendarView.selectDates(from: firstDate!, to: self.lastDate!,  triggerSelectionDelegate: false, keepSelectionIfMultiSelectionAllowed: true)
+        } else {
+            firstDate = date
+            self.lastDate = date
+        }
+        
+        setDateInfoDetailsUI()
+        //self.rangingStarted(cellState: cellState)
+        cell?.bounce()
     }
     
     func calendar(_ calendar: JTACMonthView, didDeselectDate date: Date, cell: JTACDayCell?, cellState: CellState, indexPath: IndexPath) {
-        handleCellSelected(view: cell, cellState: cellState, date: date)
+        handleCellSelected(view: cell, cellState: cellState)
         handleCellTextColor(view: cell, cellState: cellState)
+        handleDateRangeSelection(view: cell, cellState: cellState)
+        if firstDate != nil && lastDate != nil {
+            self.calendarView.deselectDates(from: self.firstDate!, to: self.lastDate!, triggerSelectionDelegate: false)
+        }
+        
+        if date != self.firstDate && date != self.lastDate {
+            if date < self.firstDate! {
+                self.firstDate = date
+            } else {
+                self.lastDate = date
+            }
+            calendarView.selectDates(from: firstDate!, to: self.lastDate!,  triggerSelectionDelegate: false, keepSelectionIfMultiSelectionAllowed: true)
+            cell?.bounce()
+        } else {
+            self.firstDate = nil
+            self.lastDate = nil
+        }
+        
+        setDateInfoDetailsUI()
     }
     
-//    func calendar(_ calendar: JTACMonthView, didSelectDate date: Date, cell: JTACDayCell?, cellState: CellState) {
-//        handleCellSelected(view: cell, cellState: cellState, date: date)
-//        handleCellTextColor(view: cell, cellState: cellState)
-//        setDate(date: date)
-//    }
-//
-//    func calendar(_ calendar: JTACMonthView, didDeselectDate date: Date, cell: JTACDayCell?, cellState: CellState) {
-//
-//        handleCellSelected(view: cell, cellState: cellState, date: date)
-//        handleCellTextColor(view: cell, cellState: cellState)
-//    }
     
     func calendar(_ calendar: JTACMonthView, didScrollToDateSegmentWith visibleDates: DateSegmentInfo) {
         setupViewsOfCalendar(from: visibleDates)
     }
     
+}
+
+extension UIView {
+    func bounce() {
+        self.transform = CGAffineTransform(scaleX: 0.5, y: 0.5)
+        UIView.animate(withDuration: 0.5,
+                       delay: 0,
+                       usingSpringWithDamping: 0.3,
+                       initialSpringVelocity: 0.1,
+                       options: UIView.AnimationOptions.beginFromCurrentState,
+                       animations: {
+                        self.transform = CGAffineTransform(scaleX: 1, y: 1)
+        }, completion: nil)
+    }
 }

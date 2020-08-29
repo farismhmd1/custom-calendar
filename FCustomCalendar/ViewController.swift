@@ -16,7 +16,7 @@ class ViewController: UIViewController {
     
     var calendarViewController: CalendarViewController?
     let calendarContainerViewWeeklyHeight: CGFloat = 170
-    let calendarContainerViewMonthlyHeight: CGFloat = 300
+    let calendarContainerViewMonthlyHeight: CGFloat = 400
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
@@ -27,11 +27,14 @@ class ViewController: UIViewController {
         if let vc = segue.destination as? CalendarViewController {
             vc.delegate = self
             // Setup calendar style externaly
-            vc.outsideMonthColor = .black
+            vc.prevDayColor = .white
+            vc.outsideMonthColor = .white
             vc.monthColor = .white
             vc.selectedMonthColor = .black
             vc.selectedDateViewColor = .red
+            vc.selectedRangeColor = UIColor.red.withAlphaComponent(0.5)
             vc.selectedDateTextColor = .white
+            vc.calendarSelectionMode = .multiple
             calendarViewController = vc
         }
     }

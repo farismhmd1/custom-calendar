@@ -12,6 +12,8 @@ class CustomDayCell: JTACDayCell {
 
     @IBOutlet weak var dateLabel: UILabel!
     @IBOutlet weak var selectedView: UIView!
+    @IBOutlet weak var rightView: UIView!
+    @IBOutlet weak var leftView: UIView!
     
     override func awakeFromNib() {
         super.awakeFromNib()
