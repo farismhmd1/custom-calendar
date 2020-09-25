@@ -39,7 +39,7 @@
 		6451A9D324D58AEB00CCA97E /* GlobalFunctionsAndExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6451A9BA24D58AEB00CCA97E /* GlobalFunctionsAndExtensions.swift */; };
 		6451A9D424D58AEB00CCA97E /* JTACYearView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6451A9BB24D58AEB00CCA97E /* JTACYearView.swift */; };
 		6451A9D524D58AEB00CCA97E /* JTACCollectionYearViewDelegates.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6451A9BC24D58AEB00CCA97E /* JTACCollectionYearViewDelegates.swift */; };
-		6451A9D724D58BAB00CCA97E /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6451A9D624D58BAA00CCA97E /* Extensions.swift */; };
+		6451A9D724D58BAB00CCA97E /* Calendar+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6451A9D624D58BAA00CCA97E /* Calendar+Extensions.swift */; };
 		6451A9DA24D58C4100CCA97E /* CustomDayCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6451A9D824D58C4100CCA97E /* CustomDayCell.swift */; };
 		648F12B924F996160000EBCA /* Date+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 648F12B824F996160000EBCA /* Date+Extensions.swift */; };
 		8EB1DC1C2EDC016471C20F37 /* Pods_FCustomCalendar_FCustomCalendarUITests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F3084AF5C59B60FD7D47452D /* Pods_FCustomCalendar_FCustomCalendarUITests.framework */; };
@@ -108,7 +108,7 @@
 		6451A9BB24D58AEB00CCA97E /* JTACYearView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = JTACYearView.swift; sourceTree = "<group>"; };
 		6451A9BC24D58AEB00CCA97E /* JTACCollectionYearViewDelegates.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = JTACCollectionYearViewDelegates.swift; sourceTree = "<group>"; };
 		6451A9BD24D58AEB00CCA97E /* JTAppleCalendar.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = JTAppleCalendar.h; sourceTree = "<group>"; };
-		6451A9D624D58BAA00CCA97E /* Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
+		6451A9D624D58BAA00CCA97E /* Calendar+Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Calendar+Extensions.swift"; sourceTree = "<group>"; };
 		6451A9D824D58C4100CCA97E /* CustomDayCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomDayCell.swift; sourceTree = "<group>"; };
 		648F12B824F996160000EBCA /* Date+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Date+Extensions.swift"; sourceTree = "<group>"; };
 		7FAD5A5EF8EC211A4F255531 /* Pods-FCustomCalendar.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FCustomCalendar.release.xcconfig"; path = "Target Support Files/Pods-FCustomCalendar/Pods-FCustomCalendar.release.xcconfig"; sourceTree = "<group>"; };
@@ -176,7 +176,7 @@
 				6451A97424D5899800CCA97E /* SceneDelegate.swift */,
 				6451A97624D5899800CCA97E /* ViewController.swift */,
 				6451A9A224D58A5400CCA97E /* CalendarViewController.swift */,
-				6451A9D624D58BAA00CCA97E /* Extensions.swift */,
+				6451A9D624D58BAA00CCA97E /* Calendar+Extensions.swift */,
 				6451A97824D5899800CCA97E /* Main.storyboard */,
 				6451A97B24D5899900CCA97E /* Assets.xcassets */,
 				6451A97D24D5899900CCA97E /* LaunchScreen.storyboard */,
@@ -491,7 +491,7 @@
 				6451A9D424D58AEB00CCA97E /* JTACYearView.swift in Sources */,
 				6451A9D024D58AEB00CCA97E /* JTACMonthLayoutProtocol.swift in Sources */,
 				6451A9D324D58AEB00CCA97E /* GlobalFunctionsAndExtensions.swift in Sources */,
-				6451A9D724D58BAB00CCA97E /* Extensions.swift in Sources */,
+				6451A9D724D58BAB00CCA97E /* Calendar+Extensions.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
